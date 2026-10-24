@@ -1,6 +1,10 @@
 # DISASTE-EVAL
 ### High-Throughput Disaster Evaluation, Spatial Triage & Infrastructure Resilience Engine
-#### Real-World Geospatial GIS Calibration: Yamuna River Basin & Floodplains (Delhi NCR)
+#### Real-World Geospatial Calibration: Chandigarh University & Mamupur / Gharuan, Mohali (SAS Nagar), Punjab
+
+[![Live Production](https://img.shields.io/badge/Live%20Deployment-disaste--eval--cu.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://disaste-eval-cu.vercel.app/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/kushagar-debug/disaste-eval)
+[![Research Paper](https://img.shields.io/badge/Research%20Paper-IEEE%20PDF-0369a1?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](./Disaster_Evaluation_ADS_Research_Paper.pdf)
 
 [![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-19.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -8,6 +12,15 @@
 [![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?logo=leaflet&logoColor=white)](https://leafletjs.com/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Sendai Aligned](https://img.shields.io/badge/UNDRR-Sendai%20Framework-0284c7)](https://www.undrr.org/implementing-sendai-framework/what-sendai-framework)
+
+---
+
+## Live Deployments & Artifacts
+
+- **Live Production URL**: [https://disaste-eval-cu.vercel.app/](https://disaste-eval-cu.vercel.app/)
+- **GitHub Repository**: [https://github.com/kushagar-debug/disaste-eval](https://github.com/kushagar-debug/disaste-eval)
+- **Local Dev Server**: `http://localhost:5173/`
+- **Formal Academic Research Paper**: [`Disaster_Evaluation_ADS_Research_Paper.pdf`](./Disaster_Evaluation_ADS_Research_Paper.pdf) (compiled via `npm run generate-pdf`)
 
 ---
 
@@ -29,7 +42,7 @@ src/
 ├── scientific/
 │   ├── RiskModel.ts          # UNDRR Sendai & NDMA Disaster Risk Formulation
 │   ├── BenchmarkEngine.ts    # Browser-side comparative benchmarking (N = 100 to 25,000)
-│   └── PdfReportGenerator.ts # Formal research dossier publication generator (.PDF)
+│   └── PdfReportGenerator.ts # In-app research dossier export (.PDF)
 ├── components/
 │   ├── map/
 │   │   ├── GeospatialMap.tsx # Leaflet Map with CartoDB Dark Matter & live ADS overlays
@@ -41,6 +54,8 @@ src/
 │   └── Navbar.tsx            # Session control, scenario loader & PDF export
 └── context/
     └── SimulationContext.tsx # Centralized cycle dispatcher & entity state machine
+scripts/
+└── generate-report.js        # Standalone Node.js IEEE/ACM Research Paper PDF generator
 ```
 
 ---
@@ -49,7 +64,7 @@ src/
 
 ### A. Geospatial Region QuadTree (`/src/ads/QuadTree.ts`)
 - **WGS84 Space Partitioning**: Partitions geographic continuous space ($\text{lat}, \text{lng}$) into quadrants (`NW`, `NE`, `SW`, `SE`).
-- **Haversine Spherical Range Queries**: Combines $\mathcal{O}(\log N)$ degree bounding-box pruning with great-circle spherical distance verification in meters.
+- **Haversine Spherical Range Queries**: Combines $\mathcal{O}(\log N)$ degree bounding-box pruning with great-circle spherical distance verification in meters ($R = 6,371,000\,\text{m}$).
 - **Visual Boundary Overlays**: Exports live bounding boxes (`[[minLat, minLng], [maxLat, maxLng]]`) rendered directly as glowing cyan rectangles on the Leaflet map.
 
 ### B. Fibonacci Heap with Degree Consolidation (`/src/ads/FibonacciHeap.ts`)
@@ -62,8 +77,8 @@ src/
 - **Triage Dynamics**: Evacuating casualties triggers `extractMin()`, consolidating trees of identical degree into higher-order trees (Degree 1, Degree 2, Degree 3...), visible directly inside the ADS Inspector.
 
 ### C. Disjoint-Set Union & Dynamic MST (`/src/ads/DSU.ts`)
-- **Ackermann Inverse Efficiency**: Union by Rank and recursive Path Compression guarantee an amortized time of $\mathcal{O}(\alpha(N)) \approx \mathcal{O}(1)$ per operation.
-- **Infrastructure Survivability**: Kruskal's algorithm drives the Dynamic Minimum Spanning Tree (MST), connecting critical hospitals (AIIMS, LNJP, GTB) and relief muster hubs. When bridges across the Yamuna (e.g. Old Iron Bridge) flood, the MST isolates partitioned components in real-time.
+- **Ackermann Inverse Efficiency**: Union by Rank and recursive Path Compression guarantee an amortized time of $\mathcal{O}(\alpha(V)) \approx \mathcal{O}(1)$ per operation.
+- **Infrastructure Survivability**: Kruskal's algorithm drives the Dynamic Minimum Spanning Tree (MST), connecting critical medical facilities (Ivy Hospital, Kharar Civil Hospital), emergency shelters (CU Sports Arena, Academic Block Triage Base), and logistics depots. When arterial links (e.g., NH-5 bridges or rural access roads) collapse, the MST isolates partitioned components in real-time.
 
 ### D. Dynamic A* Pathfinding (`/src/ads/Pathfinding.ts`)
 - **QuadTree Hazard Proximity Weighting**: Dynamic edge impedance function:
@@ -76,11 +91,11 @@ src/
 
 ### 1. Disaster Risk Index (DRI)
 Adheres to the **UNDRR Sendai Framework (Priority 1 & 4)** and **NDMA National Disaster Management Guidelines**:
-$$R = \frac{\text{Hazard Threat Level} \times \text{Vulnerability Factor}}{\text{Capacity Margin}}$$
+$$R = \min\left(100, \max\left(0, \frac{\text{Hazard Threat} \times \text{Vulnerability Factor} \times 12}{\text{Capacity Margin}}\right)\right)$$
 Where:
-- $\text{Hazard Threat} = \frac{1}{|H|} \sum_{h \in H} \text{Severity}_h \times \left(\frac{\text{Radius}_h}{500}\right)$
-- $\text{Vulnerability Factor} V$ incorporates demographic age weighting ($\text{Pediatric} < 12$, $\text{Geriatric} > 65$) and environmental hazard exposure.
-- $\text{Capacity Margin} C = \frac{\text{Active Shelter Beds} + \text{Medical Staff}}{1.5 \times \text{Active Casualties}}$
+- $\text{Hazard Threat} \in [0.1, 10.0]$: Combines clinical hazard severity and physical expansion relative to hazard ceilings (`maxRadius`).
+- $\text{Vulnerability Factor} \in [0.05, 3.0]$: Modulated by pediatric ($age < 12 \implies 1.4$) and geriatric ($age > 65 \implies 1.6$) vulnerability multipliers.
+- $\text{Capacity Margin} \in [0.6, 5.0]$: Operational shelter absorption headroom based on total available shelter capacity relative to active casualty influx.
 
 ### 2. Dynamic Casualty Triage Score (DCTS)
 $$\text{Priority Urgency} = (w_1 \cdot \text{Severity}) + (w_2 \cdot \text{Environmental Hazard}) + (w_3 \cdot \Delta t)$$
@@ -93,9 +108,10 @@ $$\text{Priority Urgency} = (w_1 \cdot \text{Severity}) + (w_2 \cdot \text{Envir
 
 ## 4. Workstation Features
 
-- **Real-World Geospatial Map (Leaflet + CartoDB Dark Matter)**:
-  - Calibrated to Yamuna River Basin & Floodplains (Delhi NCR).
-  - Circular hazard zones (live meters radius) with pulse animations.
+- **Real-World Geospatial Map (Leaflet + Authenticated CartoDB Dark Matter)**:
+  - Calibrated to **Chandigarh University campus & Mamupur / Gharuan, Mohali (SAS Nagar), Punjab** ($[30.7695^\circ\text{ N}, 76.5760^\circ\text{ E}]$).
+  - Authenticated high-DPI Dark Matter tiles via CartoDB API.
+  - Bounded hazard expansion with emergency shelter containment decay.
   - Dynamic MST infrastructure backbone drawn with live link impedances.
   - Directional A* evacuation corridors flowing toward nearest operational shelters.
   - Interactive tools: Add Casualties, Deploy Hazards, Establish Shelters, Sever Corridors.
@@ -109,8 +125,9 @@ $$\text{Priority Urgency} = (w_1 \cdot \text{Severity}) + (w_2 \cdot \text{Envir
   - In-browser profiling up to $N = 25,000$ operations.
   - Direct comparison of Fibonacci Heap vs Binary Heap and QuadTree vs Linear Scan.
   - Live latency bar charts and theoretical Big-O comparisons.
-- **One-Click Formal Research Dossier Generator**:
-  - Generates publication-formatted A4 PDF reports via `jsPDF` + `jspdf-autotable`.
+- **Dual PDF Dossier Engines**:
+  - Browser-side publication-formatted PDF export via `jsPDF` + `jspdf-autotable`.
+  - Standalone Node.js IEEE/ACM Research Paper compilation script (`scripts/generate-report.js`) compiling [`Disaster_Evaluation_ADS_Research_Paper.pdf`](./Disaster_Evaluation_ADS_Research_Paper.pdf).
 
 ---
 
@@ -120,29 +137,49 @@ $$\text{Priority Urgency} = (w_1 \cdot \text{Severity}) + (w_2 \cdot \text{Envir
 - Node.js (v18+ or v20+)
 - npm (v9+)
 
-### Installation & Launch
+### Local Development
 ```bash
-# 1. Install dependencies
+# 1. Clone repository
+git clone https://github.com/kushagar-debug/disaste-eval.git
+cd disaste-eval
+
+# 2. Install dependencies
 npm install
 
-# 2. Launch Vite development server
+# 3. Launch development server
 npm run dev
-
-# 3. Access in browser
-open http://localhost:5173/
+# Access at: http://localhost:5173/
 ```
 
 ### Production Build
 ```bash
+# Compile production bundle
 npm run build
+
+# Preview production build locally
 npm run preview
+```
+
+### Generate Academic Research Paper (PDF)
+```bash
+# Compiles Disaster_Evaluation_ADS_Research_Paper.pdf into project root
+npm run generate-pdf
 ```
 
 ---
 
-## 6. Academic References
+## 6. Live Production Access
+
+The application is deployed continuously via Vercel:
+
+- **Production URL**: [https://disaste-eval-cu.vercel.app/](https://disaste-eval-cu.vercel.app/)
+
+---
+
+## 7. Academic References
 1. **Fredman, M. L., & Tarjan, R. E. (1987).** *Fibonacci heaps and their uses in improved network optimization algorithms.* Journal of the ACM (JACM), 34(3), 596-615.
 2. **Finkel, R. A., & Bentley, J. L. (1974).** *Quad trees: A data structure for retrieval on composite keys.* Acta Informatica, 4(1), 1-9.
 3. **Tarjan, R. E. (1975).** *Efficiency of a good but not linear set union algorithm.* Journal of the ACM (JACM), 22(2), 215-225.
 4. **United Nations Office for Disaster Risk Reduction (UNDRR). (2015).** *Sendai Framework for Disaster Risk Reduction 2015-2030.*
-5. **National Disaster Management Authority (NDMA). (2019).** *National Disaster Management Guidelines: Mass Casualty Management.*
+5. **National Disaster Management Authority (NDMA). (2026).** *National Disaster Management Guidelines: Mass Casualty Events & Infrastructure Resilience Architecture.*
+6. **Hart, P. E., Nilsson, N. J., & Raphael, B. (1968).** *A formal basis for the heuristic determination of minimum cost paths.* IEEE Transactions on Systems Science and Cybernetics, 4(2), 100-107.
